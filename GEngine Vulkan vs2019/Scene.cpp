@@ -2,6 +2,7 @@
 
 Scene::Scene()
 {
+	m_GameObjects = std::vector<GameObject*>();
 }
 
 Scene::~Scene()
