@@ -2,7 +2,7 @@
 
 GameObject::GameObject()
 {
-
+	m_ChildObjects = std::vector<GameObject*>();
 }
 
 GameObject::~GameObject()
