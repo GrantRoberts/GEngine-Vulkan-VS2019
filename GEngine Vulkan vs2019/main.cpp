@@ -3,6 +3,8 @@
 
 int main()
 {
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
 	Application* app = new Application();
 
 	if (app->Startup())
@@ -11,8 +13,6 @@ int main()
 
 		app->Run();
 	}
-
-	system("pause");
 
 	delete app;
 	app = nullptr;
