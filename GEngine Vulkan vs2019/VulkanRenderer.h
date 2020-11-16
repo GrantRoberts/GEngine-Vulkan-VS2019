@@ -99,6 +99,8 @@ public:
 	// Returns: Vulkan shader module with the shader code.
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 
+	void CreateRenderPass();
+
 private:
 	// The game window.
 	GLFWwindow* m_Window;
@@ -133,6 +135,14 @@ private:
 
 	// The presentation queue.
 	VkQueue m_VkPresentQueue;
+
+	// The vulkan render pass.
+	VkRenderPass m_VkRenderPass;
+
+	// The graphics pipeline layout.
+	VkPipelineLayout m_VkPipelineLayout;
+
+	VkPipeline m_VkGraphicsPipeline;
 
 	std::vector<VkImageView> m_VkSwapChainImageViews;
 
