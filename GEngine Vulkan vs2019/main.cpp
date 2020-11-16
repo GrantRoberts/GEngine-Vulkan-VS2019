@@ -4,18 +4,28 @@
 int main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
-	Application* app = new Application();
-
-	if (app->Startup())
+	try
 	{
-		std::cout << "Application creation successful!" << std::endl;
+		Application* app = new Application();
 
-		app->Run();
+		if (app->Startup())
+		{
+			std::cout << "Application creation successful!" << std::endl;
+
+			app->Run();
+		}	
+
+			delete app;
+			app = nullptr;
+
+		return 0;
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	delete app;
-	app = nullptr;
 
-	return 0;
+	return EXIT_SUCCESS;
 }
