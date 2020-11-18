@@ -91,13 +91,16 @@ public:
 
 	// Read a file.
 	// Params: the path to the file.
-	// Returns: vector of the contents of the file.
+	// Returns: char vector of the contents of the file.
 	std::vector<char> ReadFile(const std::string& fileName);
 
 	// Create shader modules.
 	// Params: the shader code.
 	// Returns: Vulkan shader module with the shader code.
 	VkShaderModule CreateShaderModule(const std::vector<char>& code);
+
+	// Create a render pass.
+	void CreateRenderPass();
 
 private:
 	// The game window.
@@ -124,8 +127,10 @@ private:
 	// Images being drawn to for the swap chain.
 	std::vector<VkImage> m_VkSwapChainImages;
 
+	// The image format.
 	VkFormat m_VkSwapChainImageFormat;
 
+	// The extents of the image.
 	VkExtent2D m_VkSwapChainExtent;
 
 	// The queue for drawing graphics.
@@ -134,6 +139,16 @@ private:
 	// The presentation queue.
 	VkQueue m_VkPresentQueue;
 
+	// The vulkan render pass.
+	VkRenderPass m_VkRenderPass;
+
+	// The graphics pipeline layout.
+	VkPipelineLayout m_VkPipelineLayout;
+
+	// The graphics pipeline.
+	VkPipeline m_VkGraphicsPipeline;
+
+	// View of the swap chain images.
 	std::vector<VkImageView> m_VkSwapChainImageViews;
 
 	// Validation layers
