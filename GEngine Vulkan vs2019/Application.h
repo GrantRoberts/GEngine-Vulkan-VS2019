@@ -1,4 +1,5 @@
 #pragma once
+#include "Scene.h"
 #include "VulkanRenderer.h"
 
  class Application
@@ -15,6 +16,8 @@
 
 		// Run the application.
 		void Run();
+
+		VulkanRenderer* GetRenderer() { return m_VulkanRenderer; }
 
 	private:
 		// The vulkan renderer.
