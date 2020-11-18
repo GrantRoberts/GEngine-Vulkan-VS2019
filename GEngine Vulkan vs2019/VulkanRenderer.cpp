@@ -527,7 +527,7 @@ void VulkanRenderer::CreateGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShaderStageInfo.module = fragShaderModule;
 	fragShaderStageInfo.pName = "main";
 
@@ -600,7 +600,7 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
 	if (vkCreatePipelineLayout(m_VkLogicalDevice, &pipelineLayoutInfo, nullptr, &m_VkPipelineLayout) != VK_SUCCESS)
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw std::runtime_error("Failed to create pipeline layout!");
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -660,32 +660,33 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::vector<char>& code)
 
 void VulkanRenderer::CreateRenderPass()
 {
-	VkAttachmentDescription colourAttachment{};
-	colourAttachment.format = m_VkSwapChainImageFormat;
-	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	VkAttachmentDescription colorAttachment{};
+	colorAttachment.format = m_VkSwapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	VkAttachmentReference colourAttachmentRef{};
-	colourAttachmentRef.attachment = 0;
-	colourAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference colorAttachmentRef{};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colourAttachmentRef;
+	subpass.pColorAttachments = &colorAttachmentRef;
 
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colourAttachment;
+	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 
-	if (vkCreateRenderPass(m_VkLogicalDevice, &renderPassInfo, nullptr, &m_VkRenderPass) != VK_SUCCESS)
+	if (vkCreateRenderPass(m_VkLogicalDevice, &renderPassInfo, nullptr, &m_VkRenderPass) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create render pass!");
+	}
 }
