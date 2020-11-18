@@ -2,7 +2,6 @@
 #include <iostream>
 #include <cstring>
 #include <set>
-#include <cstdint>
 #include <algorithm>
 #include <fstream>
 
@@ -30,6 +29,9 @@ VulkanRenderer::VulkanRenderer(float width, float height)
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+	CreateFramebuffers();
+	CreateCommandPool();
+	CreateCommandBuffers();
 }
 
 VulkanRenderer::~VulkanRenderer()
@@ -40,13 +42,18 @@ VulkanRenderer::~VulkanRenderer()
 	vkDestroySurfaceKHR(m_VkInstance, m_VkSurface, nullptr);
 	vkDestroyInstance(m_VkInstance, nullptr);
 	vkDestroySwapchainKHR(m_VkLogicalDevice, m_VkSwapChain, nullptr);
-
 	vkDestroyPipelineLayout(m_VkLogicalDevice, m_VkPipelineLayout, nullptr);
 	vkDestroyRenderPass(m_VkLogicalDevice, m_VkRenderPass, nullptr);
+	vkDestroyCommandPool(m_VkLogicalDevice, m_VkCommandPool, nullptr);
 
 	for (auto imageView : m_VkSwapChainImageViews)
 	{
 		vkDestroyImageView(m_VkLogicalDevice, imageView, nullptr);
+	}
+
+	for (auto framebuffer : m_VkSwapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(m_VkLogicalDevice, framebuffer, nullptr);
 	}
 
 	vkDestroyDevice(m_VkLogicalDevice, nullptr);
@@ -72,9 +79,7 @@ void VulkanRenderer::CreateGLFWWindow()
 void VulkanRenderer::CreateInstance()
 {
 	if (enableValidationLayers && !CheckValidationLayerSupport())
-	{
-		std::cout << "Validation layers requested, but not avaliable!" << std::endl;
-	}
+		throw std::runtime_error("Validation layers requested, but not avaliable!");
 
 	// Create the vulkan instance.
 	VkApplicationInfo appInfo{};
@@ -109,9 +114,7 @@ void VulkanRenderer::CreateInstance()
 	}
 
 	if (vkCreateInstance(&createInfo, nullptr, &m_VkInstance) != VK_SUCCESS)
-	{
-		std::cout << "Failed to create instance!" << std::endl;
-	}
+		throw std::runtime_error("Failed to create instance!");
 }
 
 void VulkanRenderer::PickPhysicalDevice()
@@ -337,7 +340,7 @@ void VulkanRenderer::CreateLogicalDevice()
 
 	if (vkCreateDevice(m_VkPhysicalDevice, &createInfo, nullptr, &m_VkLogicalDevice) != VK_SUCCESS)
 	{
-		std::cout << "Logical device creation failed" << std::endl;
+		throw std::runtime_error("Logical device creation failed");
 	}
 
 	// Get the graphics and present family queues.
@@ -476,6 +479,8 @@ void VulkanRenderer::CreateSwapChain()
 		throw std::runtime_error("Failed to create swap chain!");
 	}
 
+	vkGetSwapchainImagesKHR(m_VkLogicalDevice, m_VkSwapChain, &imageCount, nullptr);
+	m_VkSwapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(m_VkLogicalDevice, m_VkSwapChain, &imageCount, m_VkSwapChainImages.data());
 	m_VkSwapChainImageFormat = surfaceFormat.format;
 	m_VkSwapChainExtent = extent;
@@ -660,33 +665,118 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::vector<char>& code)
 
 void VulkanRenderer::CreateRenderPass()
 {
-	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = m_VkSwapChainImageFormat;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	VkAttachmentDescription colourAttachment{};
+	colourAttachment.format = m_VkSwapChainImageFormat;
+	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference colourAttachmentRef{};
+	colourAttachmentRef.attachment = 0;
+	colourAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pColorAttachments = &colourAttachmentRef;
+
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.pAttachments = &colourAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(m_VkLogicalDevice, &renderPassInfo, nullptr, &m_VkRenderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(m_VkLogicalDevice, &renderPassInfo, nullptr, &m_VkRenderPass) != VK_SUCCESS)
 		throw std::runtime_error("failed to create render pass!");
+}
+
+void VulkanRenderer::CreateFramebuffers()
+{
+	m_VkSwapChainFramebuffers.resize(m_VkSwapChainImageViews.size());
+
+	for (size_t i = 0; i < m_VkSwapChainImageViews.size(); ++i)
+	{
+		VkImageView attachments[] = { m_VkSwapChainImageViews[i] };
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_VkRenderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_VkSwapChainExtent.width;
+		framebufferInfo.height = m_VkSwapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_VkLogicalDevice, &framebufferInfo, nullptr, &m_VkSwapChainFramebuffers[i]) != VK_SUCCESS)
+			throw std::runtime_error("Failed to create framebuffer!");
+	}
+}
+
+void VulkanRenderer::CreateCommandPool()
+{
+	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_VkPhysicalDevice);
+
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.m_GraphicsFamily.value();
+
+	if (vkCreateCommandPool(m_VkLogicalDevice, &poolInfo, nullptr, &m_VkCommandPool) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create command pool!");
+}
+
+void VulkanRenderer::CreateCommandBuffers()
+{
+	m_VkCommandBuffers.resize(m_VkSwapChainFramebuffers.size());
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = m_VkCommandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint)m_VkCommandBuffers.size();
+
+	if (vkAllocateCommandBuffers(m_VkLogicalDevice, &allocInfo, m_VkCommandBuffers.data()) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate command buffers!");
+
+	for (size_t i = 0; i < m_VkCommandBuffers.size(); i++)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(m_VkCommandBuffers[i], &beginInfo) != VK_SUCCESS)
+			throw std::runtime_error("Failed to begin recording command buffer!");
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_VkRenderPass;
+		renderPassInfo.framebuffer = m_VkSwapChainFramebuffers[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = m_VkSwapChainExtent;
+
+		VkClearValue clearColour = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColour;
+
+		vkCmdBeginRenderPass(m_VkCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindPipeline(m_VkCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_VkGraphicsPipeline);
+		vkCmdDraw(m_VkCommandBuffers[i], 3, 1, 0, 0);
+		vkCmdEndRenderPass(m_VkCommandBuffers[i]);
+
+		if (vkEndCommandBuffer(m_VkCommandBuffers[i]) != VK_SUCCESS)
+			throw std::runtime_error("Failed to record command buffer!");
 	}
 }

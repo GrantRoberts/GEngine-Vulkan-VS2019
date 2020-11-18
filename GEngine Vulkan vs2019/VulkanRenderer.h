@@ -1,6 +1,5 @@
 #pragma once
 #include "SwapChainSupportDetails.h"
-#include "Scene.h"
 #include "QueueFamilyIndices.h"
 #include <string>
 
@@ -13,6 +12,20 @@ public:
 	// Destructor.
 	~VulkanRenderer();
 
+	VkDevice GetLogicalDevice() { return m_VkLogicalDevice; }
+
+	VkSwapchainKHR GetSwapChain() { return m_VkSwapChain; }
+
+	std::vector<VkCommandBuffer> GetCommandBuffers() { return m_VkCommandBuffers; }
+
+	VkQueue GetGraphicsQueue() { return m_VkGraphicsQueue; }
+
+	VkQueue GetPresentQueue() { return m_VkPresentQueue; }
+
+private:
+	//-------------------------------------------------------------------------------
+	// Functions.
+	//-------------------------------------------------------------------------------
 	// Create a GFLW window.
 	void CreateGLFWWindow();
 
@@ -102,7 +115,18 @@ public:
 	// Create a render pass.
 	void CreateRenderPass();
 
-private:
+	// Create the framebuffers.
+	void CreateFramebuffers();
+
+	// Create the command pool.
+	void CreateCommandPool();
+
+	// Create command buffers.
+	void CreateCommandBuffers();
+
+	//-------------------------------------------------------------------------------
+	// Variables.
+	//-------------------------------------------------------------------------------
 	// The game window.
 	GLFWwindow* m_Window;
 
@@ -150,6 +174,15 @@ private:
 
 	// View of the swap chain images.
 	std::vector<VkImageView> m_VkSwapChainImageViews;
+
+	// The framebuffers.
+	std::vector<VkFramebuffer> m_VkSwapChainFramebuffers;
+
+	// Manager of memory for buffers and command buffers.
+	VkCommandPool m_VkCommandPool;
+
+	// The command buffers.
+	std::vector<VkCommandBuffer> m_VkCommandBuffers;
 
 	// Validation layers
 	std::vector<const char*> m_VkValidationLayers;
