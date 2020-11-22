@@ -12,14 +12,24 @@ public:
 	// Destructor.
 	~VulkanRenderer();
 
+	// Get the logical device.
+	// Returns: VkDevice that is used as the logical device.
 	VkDevice GetLogicalDevice() { return m_VkLogicalDevice; }
 
+	// Get the swap chain.
+	// Returns: VKSwapchainKHR swap chain object.
 	VkSwapchainKHR GetSwapChain() { return m_VkSwapChain; }
 
+	// Get the command buffers.
+	// Returns: vector of the command buffers.
 	std::vector<VkCommandBuffer> GetCommandBuffers() { return m_VkCommandBuffers; }
 
+	// Get the graphics queue.
+	// Returns: VkQueue used as the graphics queue.
 	VkQueue GetGraphicsQueue() { return m_VkGraphicsQueue; }
 
+	// Get the present queue.
+	// Returns: VkQueue used as the present queue.
 	VkQueue GetPresentQueue() { return m_VkPresentQueue; }
 
 private:
