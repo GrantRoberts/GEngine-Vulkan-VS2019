@@ -17,6 +17,7 @@
 		// Run the application.
 		void Run();
 
+		// Get the renderer from the application.
 		VulkanRenderer* GetRenderer() { return m_VulkanRenderer; }
 
 	private:
