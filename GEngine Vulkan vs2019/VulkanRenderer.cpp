@@ -435,9 +435,7 @@ void VulkanRenderer::CreateSwapChain()
 	uint imageCount = swapChainSupport.m_Capabilities.minImageCount + 1;
 
 	if (swapChainSupport.m_Capabilities.maxImageCount > 0 && imageCount > swapChainSupport.m_Capabilities.maxImageCount)
-	{
 		imageCount = swapChainSupport.m_Capabilities.maxImageCount;
-	}
 
 	// Creation information.
 	VkSwapchainCreateInfoKHR createInfo{};
@@ -475,9 +473,7 @@ void VulkanRenderer::CreateSwapChain()
 
 	// Create the swap chain object.
 	if (vkCreateSwapchainKHR(m_VkLogicalDevice, &createInfo, nullptr, &m_VkSwapChain) != VK_SUCCESS)
-	{
 		throw std::runtime_error("Failed to create swap chain!");
-	}
 
 	vkGetSwapchainImagesKHR(m_VkLogicalDevice, m_VkSwapChain, &imageCount, nullptr);
 	m_VkSwapChainImages.resize(imageCount);
@@ -509,10 +505,9 @@ void VulkanRenderer::CreateImageViews()
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
+		// Create the image view object.
 		if (vkCreateImageView(m_VkLogicalDevice, &createInfo, nullptr, &m_VkSwapChainImageViews[i]) != VK_SUCCESS)
-		{
 			throw std::runtime_error("Failed to create image views");
-		}
 	}
 }
 
@@ -524,12 +519,14 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
 
+	// Information on the vert shader.
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vertShaderStageInfo.module = vertShaderModule;
 	vertShaderStageInfo.pName = "main";
 
+	// Information on the frag shader.
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -550,6 +547,8 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+	// Viewport for where the camera is in scene.
+	// Just here for the demo.
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -569,6 +568,7 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = &scissor;
 
+	// Rasterizer.
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
@@ -604,9 +604,11 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	pipelineLayoutInfo.setLayoutCount = 0;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 
+	// Create the pipeline layout object.
 	if (vkCreatePipelineLayout(m_VkLogicalDevice, &pipelineLayoutInfo, nullptr, &m_VkPipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create pipeline layout!");
 
+	// The graphics pipeline.
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
@@ -622,6 +624,7 @@ void VulkanRenderer::CreateGraphicsPipeline()
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
+	// Create the graphics pipeline object.
 	if (vkCreateGraphicsPipelines(m_VkLogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_VkGraphicsPipeline) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create graphics pipeline!");
 
